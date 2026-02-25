@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>메이크업 마스터: 합격 보증 시스템</title>
+    <style>
+        :root { 
+            --primary: #ff6b6b; --secondary: #4ecdc4; --accent: #ffd93d; --bg: #f2f4f7; 
+            --blue-active: #3498db; --gray-done: #d1d8e0; --lock: #e9ecef;
+        }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; line-height: 1.4; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; }
+        .stage-box { background: white; padding: 18px; border-radius: 16px; margin-bottom: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stage-title { font-size: 1rem; font-weight: 800; margin-bottom: 15px; color: #2c3e50; }
+        .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .btn-action, .btn-full { 
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px 8px; border-radius: 12px; border: 1.5px solid #eee; 
+            background: #fff; cursor: pointer; font-weight: 700; font-size: 0.9rem; 
+            transition: all 0.2s ease; word-break: keep-all; min-height: 54px;
+        }
+        .btn-full { width: 100%; grid-column: span 3; margin-top: 4px; }
+        .status-in-progress { background: var(--blue-active) !important; color: white !important; border-color: #2980b9 !important; }
+        .status-completed { background: var(--gray-done) !important; color: #7f8c8d !important; border-color: #bdc3c7 !important; }
+        .status-locked { background: var(--lock) !important; color: #adb5bd !important; border-style: dashed !important; opacity: 0.8; }
+        #quiz-app { display: none; }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 0 0 15px 15px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .timer-badge { background: #333; color: var(--accent); padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; }
+        .q-card { background: white; padding: 22px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .q-text { font-size: 1.1rem; font-weight: 800; margin-bottom: 18px; word-break: keep-all; }
+        .option-btn { width: 100%; padding: 16px; text-align: left; border: 2px solid #f1f3f5; border-radius: 12px; background: white; cursor: pointer; margin-bottom: 10px; font-size: 0.95rem; line-height: 1.4; }
+        .option-btn.correct { background: #e8f5e9; border-color: #4caf50; color: #1b5e20; font-weight: bold; }
+        .option-btn.wrong { background: #ffebee; border-color: #f44336; color: #b71c1c; }
+        .exp-box { background: #fdf2f2; border-left: 4px solid var(--primary); padding: 15px; border-radius: 0 10px 10px 0; margin-top: 15px; font-size: 0.9rem; }
+        .next-btn { width: 100%; padding: 18px; background: #2d3436; color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1rem; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="dashboard">
+        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 국가자격증 합격 시스템</h1>
+        
+        <div class="stage-box">
+            <div class="stage-title">STAGE 1. 전체 회독 루틴 (1,212문항)</div>
+            <div class="btn-grid">
+                <button class="btn-action" id="btn-study-1" onclick="handleStageClick('study', 1, 0)">1회차</button>
+                <button class="btn-action" id="btn-study-2" onclick="handleStageClick('study', 2, 120)">2회차</button>
+                <button class="btn-action" id="btn-study-3" onclick="handleStageClick('study', 3, 60)">3회차</button>
+            </div>
+        </div>
+
+        <div class="stage-box" style="border-left-color: var(--secondary);">
+            <div class="stage-title">STAGE 2. 회독 오답 정복</div>
+            <button class="btn-full" id="btn-wrong-round" onclick="handleStageClick('wrong', 'round', 60)">
+                회독 오답 소탕 (<span id="cnt-round">0</span>)
+            </button>
+        </div>
+
+        <div class="stage-box" style="border-left-color: var(--accent);">
+            <div class="stage-title">STAGE 3. 실전 기출 (5회)</div>
+            <div class="btn-grid" id="mock-btns"></div>
+        </div>
+
+        <div class="stage-box" style="border-left-color: #2d3436;">
+            <div class="stage-title">STAGE 4. 기출 오답 정복</div>
+            <button class="btn-full" id="btn-wrong-final" onclick="handleStageClick('wrong', 'final', 40)">
+                기출 오답 소탕 (<span id="cnt-final">0</span>)
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin-top:20px;"><button onclick="resetData()" style="color:#bbb; border:none; background:none; font-size:0.8rem; text-decoration:underline;">데이터 초기화</button></div>
+    </div>
+
+    <div id="quiz-app">
+        <div class="top-nav">
+            <button onclick="exitQuiz()" style="border:none; background:none; font-size:0.9rem; font-weight:bold;">◀ 중단/저장</button>
+            <span id="q-category" style="color:var(--primary); font-weight:bold; font-size:0.85rem;">과목</span>
+            <span id="q-progress" style="font-size:0.85rem;">0/0</span>
+            <div id="timer" class="timer-badge">00:00</div>
+        </div>
+        <div class="q-card">
+            <div id="q-text" class="q-text">질문</div>
+            <div id="options-area"></div>
+            <div id="exp-area" class="exp-box" style="display:none;"></div>
+            <button id="next-btn" class="next-btn" style="display:none;" onclick="nextQuestion()">다음 문제</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    /**
+     * [아버님 필독] 데이터 입력 구역
+     * 4개의 JSON 파일 내용을 아래 questionsDB = [ ... ]; 대괄호 안에 모두 넣어주세요.
+     * 예시: questionsDB = [ {"id":1, ...}, {"id":2, ...} ];
+     */
+    let questionsDB = [
+        // --------------------------------------------------
+        // 여기에 4개 파일의 문제 데이터를 모두 복사해서 붙여넣으세요!
+        // --------------------------------------------------
+    ];
+
+    let wrongStorage = { round: [], final: [] };
+    let state = { questions: [], index: 0, timeLimit: 0, timeLeft: 0, timerId: null, currentRound: 1, mode: '', sessionKey: '', doneKey: '' };
+
+    window.onload = function() {
+        const savedWrongs = localStorage.getItem('makeup_wrongs');
+        if (savedWrongs) { wrongStorage = JSON.parse(savedWrongs); }
+        if (questionsDB.length === 0) {
+            alert("코드를 열어 questionsDB 안에 문제 데이터를 먼저 넣어주세요!");
+        } else {
+            showDashboard();
+        }
+    };
+
+    function showDashboard() {
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('quiz-app').style.display = 'none';
+        
+        document.getElementById('cnt-round').innerText = Array.from(new Map(wrongStorage.round.map(q => [q.id, q])).values()).length;
+        document.getElementById('cnt-final').innerText = Array.from(new Map(wrongStorage.final.map(q => [q.id, q])).values()).length;
+
+        updateBtn('btn-study-1', 'save_study_1', 'done_study_1', true);
+        updateBtn('btn-study-2', 'save_study_2', 'done_study_2', localStorage.getItem('done_study_1'));
+        updateBtn('btn-study-3', 'save_study_3', 'done_study_3', localStorage.getItem('done_study_2'));
+        updateBtn('btn-wrong-round', 'save_wrong_round', 'done_wrong_round', localStorage.getItem('done_study_3'));
+
+        const mockArea = document.getElementById('mock-btns');
+        let prevMockDone = localStorage.getItem('done_wrong_round');
+        mockArea.innerHTML = [1,2,3,4,5].map(n => {
+            const saveKey = `save_mock_${n}`;
+            const doneKey = `done_mock_${n}`;
+            let statusClass = prevMockDone ? '' : 'status-locked';
+            if (localStorage.getItem(saveKey)) statusClass = 'status-in-progress';
+            else if (localStorage.getItem(doneKey)) statusClass = 'status-completed';
+            const btnHtml = `<button class="btn-action ${statusClass}" id="btn-mock-${n}" onclick="handleStageClick('mock', ${n}, 40)">${prevMockDone ? '' : '🔒 '}${n}회</button>`;
+            prevMockDone = localStorage.getItem(doneKey);
+            return btnHtml;
+        }).join('');
+
+        updateBtn('btn-wrong-final', 'save_wrong_final', 'done_wrong_final', localStorage.getItem('done_mock_5'));
+    }
+
+    function updateBtn(id, saveKey, doneKey, isUnlocked) {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+        btn.classList.remove('status-in-progress', 'status-completed', 'status-locked');
+        btn.innerHTML = btn.innerHTML.replace('🔒 ', '');
+        if (!isUnlocked) {
+            btn.classList.add('status-locked'); btn.innerHTML = '🔒 ' + btn.innerHTML;
+        } else if (localStorage.getItem(saveKey)) btn.classList.add('status-in-progress');
+        else if (localStorage.getItem(doneKey)) btn.classList.add('status-completed');
+    }
+
+    function handleStageClick(mode, round, limit) {
+        const btnId = (mode === 'study') ? `btn-study-${round}` : (mode === 'wrong' ? `btn-wrong-${round}` : `btn-mock-${round}`);
+        if (document.getElementById(btnId).classList.contains('status-locked')) {
+            alert("이전 단계를 완료해야 잠금이 해제됩니다!"); return;
+        }
+        checkResume(mode, round, limit);
+    }
+
+    function checkResume(mode, round, limit) {
+        const saveKey = `save_${mode}_${round}`;
+        const doneKey = `done_${mode}_${round}`;
+        const saved = localStorage.getItem(saveKey);
+        if (saved && confirm("이전 중단 지점에서 이어서 푸시겠습니까?")) {
+            state = { ...JSON.parse(saved), sessionKey: saveKey, doneKey: doneKey };
+            launch(); return;
+        }
+        localStorage.removeItem(doneKey);
+        let pool = (mode === 'study') ? [...questionsDB] : (mode === 'wrong' ? Array.from(new Map(wrongStorage[round].map(q => [q.id, q])).values()) : []);
+        if (mode === 'mock') {
+            const ratio = { "메이크업개론": 12, "피부학": 18, "화장품학": 15, "공중위생관리학": 15 };
+            for(let s in ratio) {
+                let p = questionsDB.filter(q => (q.subject === s || q.category.includes(s))).sort(() => Math.random() - 0.5);
+                pool.push(...p.slice(0, ratio[s]));
+            }
+        }
+        if (pool.length === 0) return alert("문제가 없습니다.");
+        const shuffled = pool.sort(() => Math.random() - 0.5).map(q => {
+            const opts = Object.entries(q.options).sort(() => Math.random() - 0.5);
+            return { ...q, shuffledOptions: opts };
+        });
+        state = { mode, currentRound: round, timeLimit: limit, questions: shuffled, index: 0, sessionKey: saveKey, doneKey: doneKey };
+        launch();
+    }
+
+    function launch() {
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('quiz-app').style.display = 'block';
+        window.scrollTo(0,0); renderQuestion();
+    }
+
+    function renderQuestion() {
+        if(state.timerId) clearInterval(state.timerId);
+        const q = state.questions[state.index];
+        document.getElementById('q-category').innerText = q.category;
+        document.getElementById('q-progress').innerText = `${state.index + 1} / ${state.questions.length}`;
+        document.getElementById('q-text').innerText = q.question;
+        const optArea = document.getElementById('options-area');
+        const expArea = document.getElementById('exp-area');
+        const nextBtn = document.getElementById('next-btn');
+
+        if(state.currentRound === 1 && state.mode === 'study') {
+            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<div class="option-btn ${id === q.answer ? 'correct' : ''}">${text}</div>`).join('');
+            expArea.innerHTML = `<strong>💡 학습:</strong> ${q.explanation}`;
+            expArea.style.display = 'block'; nextBtn.style.display = 'block';
+        } else if(state.currentRound === 2 && state.mode === 'study') {
+            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`).join('');
+            expArea.innerHTML = `<strong>📖 해설을 읽고 답을 유추하세요:</strong><br>${q.explanation}`;
+            expArea.style.display = 'block'; nextBtn.style.display = 'none';
+            startTimer();
+        } else {
+            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`).join('');
+            expArea.style.display = 'none'; nextBtn.style.display = 'none';
+            startTimer();
+        }
+        localStorage.setItem(state.sessionKey, JSON.stringify(state));
+    }
+
+    function handleSelect(btn, selected, correct) {
+        clearInterval(state.timerId);
+        const btns = document.querySelectorAll('.option-btn');
+        btns.forEach(b => b.disabled = true);
+        if(selected === correct) {
+            btn.classList.add('correct');
+            if(state.mode === 'wrong') {
+                wrongStorage[state.currentRound] = wrongStorage[state.currentRound].filter(q => q.id !== state.questions[state.index].id);
+                localStorage.setItem('makeup_wrongs', JSON.stringify(wrongStorage));
+            }
+            if(state.currentRound === 2 && state.mode === 'study') { setTimeout(() => nextQuestion(), 1000); return; }
+        } else {
+            btn.classList.add('wrong');
+            if(state.mode !== 'wrong') {
+                const target = state.mode === 'mock' ? 'final' : 'round';
+                wrongStorage[target].push(state.questions[state.index]);
+                localStorage.setItem('makeup_wrongs', JSON.stringify(wrongStorage));
+            }
+            btns.forEach(b => { if(b.innerText === state.questions[state.index].options[correct]) b.classList.add('correct'); });
+        }
+        document.getElementById('exp-area').innerHTML = `<strong>해설:</strong><br>${state.questions[state.index].explanation}`;
+        document.getElementById('exp-area').style.display = 'block';
+        document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+        state.index++;
+        if(state.index < state.questions.length) renderQuestion();
+        else { alert("미션 완료! 다음 잠금이 해제되었습니다."); localStorage.setItem(state.doneKey, "true"); localStorage.removeItem(state.sessionKey); exitQuiz(); }
+    }
+
+    function startTimer() {
+        if(state.timeLimit <= 0) return;
+        state.timeLeft = state.timeLimit;
+        state.timerId = setInterval(() => {
+            state.timeLeft--;
+            const m = Math.floor(state.timeLeft / 60); const s = state.timeLeft % 60;
+            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            if(state.timeLeft <= 0) { clearInterval(state.timerId); nextQuestion(); }
+        }, 1000);
+    }
+
+    function exitQuiz() {
+        if(state.timerId) clearInterval(state.timerId);
+        showDashboard();
+        window.scrollTo(0,0);
+    }
+
+    function resetData() { if(confirm("모든 학습 기록을 초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
+</script>
+</body>
+</html>
