@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>메이크업 미용사 자격증 필기시험 2026</title>
+    <title>메이크업 마스터 v15: 최종 본</title>
     <style>
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --accent: #ffd93d; --bg: #f2f4f7; --blue-active: #3498db; --gray-done: #d1d8e0; --lock: #e9ecef; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -18,7 +18,7 @@
         .status-completed { background: var(--gray-done) !important; color: #7f8c8d !important; }
         .status-locked { background: var(--lock) !important; color: #adb5bd !important; border-style: dashed !important; opacity: 0.8; }
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
-        #quiz-app { display: none; } /* 초기엔 대시보드만 보이게 설정 */
+        #quiz-app { display: none; }
         .top-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 0 0 15px 15px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .timer-badge { background: #333; color: var(--accent); padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; }
         .q-card { background: white; padding: 22px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -28,6 +28,10 @@
         .option-btn.wrong { background: #ffebee; border-color: #f44336; color: #b71c1c; }
         .exp-box { background: #fdf2f2; border-left: 4px solid var(--primary); padding: 15px; border-radius: 0 10px 10px 0; margin-top: 15px; font-size: 0.9rem; }
         .next-btn { width: 100%; padding: 18px; background: #2d3436; color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; }
+        
+        /* 저작권 영역 스타일 */
+        .footer-copyright { text-align: center; padding: 25px 10px; color: #95a5a6; font-size: 0.75rem; line-height: 1.6; }
+        .footer-copyright b { color: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -40,7 +44,7 @@
 
 <div class="container" id="main-container" style="display:none;">
     <div id="dashboard-view">
-        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 필기시험 문제 풀이 2026</h1>
+        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 합격 마스터</h1>
         
         <div class="stage-box">
             <div class="stage-title">STAGE 1. 과목별 순차 회독</div>
@@ -53,7 +57,12 @@
         <div class="stage-box" style="border-left-color: var(--secondary);"><div class="stage-title">STAGE 2. 오답 소탕</div><button class="btn-full" id="btn-wrong-round" onclick="handleStageClick('wrong', 'round', 60)">오답 정복 (<span id="cnt-round">0</span>)</button></div>
         <div class="stage-box" style="border-left-color: var(--accent);"><div class="stage-title">STAGE 3. 실전 기출 (5회)</div><div class="btn-grid" id="mock-btns"></div></div>
         <div class="stage-box" style="border-left-color: #2d3436;"><div class="stage-title">STAGE 4. 최종 오답 정복</div><button class="btn-full" id="btn-wrong-final" onclick="handleStageClick('wrong', 'final', 40)">기출 오답 소탕 (<span id="cnt-final">0</span>)</button></div>
-        <div style="text-align: center; margin-top:20px;"><button onclick="resetData()" style="color:#bbb; border:none; background:none; font-size:0.8rem; text-decoration:underline; cursor:pointer;">기록 초기화</button></div>
+        
+        <div class="footer-copyright">
+            <b>Copyright 2026. All rights reserved.</b><br>
+            본 시스템의 문제 데이터 및 학습 알고리즘에 대한 무단 복제 및 전재를 금합니다.<br>
+            사용자의 학습 데이터는 기기 로컬 저장소에 안전하게 보관됩니다.
+        </div>
     </div>
 
     <div id="quiz-app">
@@ -73,6 +82,7 @@
 </div>
 
 <script>
+    /* 자바스크립트 로직 (v14의 중단 버그 수정 반영) */
     let questionsDB = [];
     let wrongStorage = { round: [], final: [] };
     let state = { questions: [], index: 0, timeLimit: 0, timeLeft: 0, timerId: null, currentRound: 1, mode: '', sessionKey: '', doneKey: '' };
@@ -91,31 +101,23 @@
             }
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-container').style.display = 'block';
-            
             const savedWrongs = localStorage.getItem('makeup_wrongs');
             if (savedWrongs) wrongStorage = JSON.parse(savedWrongs);
-            
             showDashboard();
-        } catch (err) { 
-            document.getElementById('load-status').innerText = "파일 로드 실패"; 
-        }
+        } catch (err) { document.getElementById('load-status').innerText = "파일 로드 실패"; }
     }
 
     window.onload = loadData;
 
     function showDashboard() {
-        // 퀴즈 끄고 대시보드 켜기 (명확한 전환)
         document.getElementById('quiz-app').style.display = 'none';
         document.getElementById('dashboard-view').style.display = 'block';
-        
         document.getElementById('cnt-round').innerText = Array.from(new Map(wrongStorage.round.map(q => [q.id, q])).values()).length;
         document.getElementById('cnt-final').innerText = Array.from(new Map(wrongStorage.final.map(q => [q.id, q])).values()).length;
-
         updateBtn('btn-study-1', 'save_study_1', 'done_study_1', true);
         updateBtn('btn-study-2', 'save_study_2', 'done_study_2', localStorage.getItem('done_study_1'));
         updateBtn('btn-study-3', 'save_study_3', 'done_study_3', localStorage.getItem('done_study_2'));
         updateBtn('btn-wrong-round', 'save_wrong_round', 'done_wrong_round', localStorage.getItem('done_study_3'));
-
         const mockArea = document.getElementById('mock-btns');
         let prevMockDone = localStorage.getItem('done_wrong_round');
         mockArea.innerHTML = [1,2,3,4,5].map(n => {
@@ -126,7 +128,6 @@
             prevMockDone = localStorage.getItem(doneKey);
             return `<button class="btn-action ${statusClass}" id="btn-mock-${n}" onclick="handleStageClick('mock', ${n}, 40)">${statusClass.includes('locked') ? '🔒 ' : ''}${n}회</button>`;
         }).join('');
-        
         updateBtn('btn-wrong-final', 'save_wrong_final', 'done_wrong_final', localStorage.getItem('done_mock_5'));
     }
 
@@ -148,14 +149,9 @@
     function checkResume(mode, round, limit) {
         const saveKey = `save_${mode}_${round}`, doneKey = `done_${mode}_${round}`;
         const saved = localStorage.getItem(saveKey);
-        if (saved && confirm("이어서 푸시겠습니까?")) {
-            state = { ...JSON.parse(saved), sessionKey: saveKey, doneKey: doneKey };
-            launch(); return;
-        }
-        
+        if (saved && confirm("이어서 푸시겠습니까?")) { state = { ...JSON.parse(saved), sessionKey: saveKey, doneKey: doneKey }; launch(); return; }
         localStorage.removeItem(doneKey);
         let pool = (mode === 'study') ? [...questionsDB] : (mode === 'wrong' ? Array.from(new Map(wrongStorage[round].map(q => [q.id, q])).values()) : []);
-        
         if (mode === 'mock') {
             const ratio = { "메이크업개론": 12, "피부학": 18, "화장품학": 15, "공중위생관리학": 15 };
             pool = [];
@@ -164,15 +160,11 @@
                 pool.push(...p.slice(0, ratio[s]));
             }
             pool.sort(() => Math.random() - 0.5);
-        } else if (round > 1) {
-            pool.sort(() => Math.random() - 0.5);
-        }
-
+        } else if (round > 1) { pool.sort(() => Math.random() - 0.5); }
         const finalQuestions = pool.map(q => {
             const opts = Object.entries(q.options).sort(() => Math.random() - 0.5);
             return { ...q, shuffledOptions: opts };
         });
-
         state = { mode, currentRound: round, timeLimit: limit, questions: finalQuestions, index: 0, sessionKey: saveKey, doneKey: doneKey };
         launch();
     }
@@ -180,8 +172,7 @@
     function launch() {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('quiz-app').style.display = 'block';
-        window.scrollTo(0,0); 
-        renderQuestion();
+        window.scrollTo(0,0); renderQuestion();
     }
 
     function renderQuestion() {
@@ -191,22 +182,16 @@
         document.getElementById('q-progress').innerText = `${state.index + 1} / ${state.questions.length}`;
         document.getElementById('q-text').innerText = q.question;
         const optArea = document.getElementById('options-area'), expArea = document.getElementById('exp-area'), nextBtn = document.getElementById('next-btn');
-
         const optsHtml = q.shuffledOptions.map(([id, text]) => {
             if(state.currentRound === 1 && state.mode === 'study') return `<div class="option-btn ${id === q.answer ? 'correct' : ''}">${text}</div>`;
             return `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`;
         }).join('');
         optArea.innerHTML = optsHtml;
-
         if(state.currentRound === 1 && state.mode === 'study') {
-            expArea.innerHTML = `<strong>💡 학습:</strong> ${q.explanation}`;
-            expArea.style.display = 'block'; nextBtn.style.display = 'block';
+            expArea.innerHTML = `<strong>💡 학습:</strong> ${q.explanation}`; expArea.style.display = 'block'; nextBtn.style.display = 'block';
         } else if(state.currentRound === 2 && state.mode === 'study') {
-            expArea.innerHTML = `<strong>📖 해설 유추:</strong><br>${q.explanation}`;
-            expArea.style.display = 'block'; nextBtn.style.display = 'none'; startTimer();
-        } else {
-            expArea.style.display = 'none'; nextBtn.style.display = 'none'; startTimer();
-        }
+            expArea.innerHTML = `<strong>📖 해설 유추:</strong><br>${q.explanation}`; expArea.style.display = 'block'; nextBtn.style.display = 'none'; startTimer();
+        } else { expArea.style.display = 'none'; nextBtn.style.display = 'none'; startTimer(); }
         localStorage.setItem(state.sessionKey, JSON.stringify(state));
     }
 
@@ -217,7 +202,7 @@
         if(selected === correct) {
             btn.classList.add('correct');
             if(state.mode === 'wrong') {
-                wrongStorage[state.currentRound] = wrongStorage[state.currentRound].filter(q => q.id !== state.questions[state.index].id);
+                wrongStorage[state.currentRound === 'round' ? 'round' : 'final'] = wrongStorage[state.currentRound === 'round' ? 'round' : 'final'].filter(q => q.id !== state.questions[state.index].id);
                 localStorage.setItem('makeup_wrongs', JSON.stringify(wrongStorage));
             }
             if(state.currentRound === 2 && state.mode === 'study') { setTimeout(() => nextQuestion(), 1000); return; }
@@ -238,7 +223,7 @@
     function nextQuestion() {
         state.index++;
         if(state.index < state.questions.length) renderQuestion();
-        else { alert("완료!"); localStorage.setItem(state.doneKey, "true"); localStorage.removeItem(state.sessionKey); exitQuiz(); }
+        else { alert("미션 완료!"); localStorage.setItem(state.doneKey, "true"); localStorage.removeItem(state.sessionKey); exitQuiz(); }
     }
 
     function startTimer() {
@@ -252,33 +237,11 @@
         }, 1000);
     }
 
-    // [핵심 수정] 중단 버튼 클릭 시 즉시 복귀 로직
     function exitQuiz() {
-        // 1. 타이머 즉시 정지
-        if(state.timerId) {
-            clearInterval(state.timerId);
-            state.timerId = null;
-        }
-        
-        // 2. 현재 상태(푼 문제 번호 등) 저장
-        if(state.sessionKey) {
-            localStorage.setItem(state.sessionKey, JSON.stringify(state));
-        }
-        
-        // 3. 화면 가시성 전환 (퀴즈 끄고 대시보드 켜기)
-        document.getElementById('quiz-app').style.display = 'none';
-        document.getElementById('dashboard-view').style.display = 'block';
-        
-        // 4. 대시보드 상태 업데이트 (파란색 버튼 등 갱신)
-        showDashboard();
-        
-        // 5. 스크롤 맨 위로
-        window.scrollTo(0, 0);
+        if(state.timerId) clearInterval(state.timerId);
+        if(state.sessionKey) localStorage.setItem(state.sessionKey, JSON.stringify(state));
+        showDashboard(); window.scrollTo(0, 0);
     }
-
-    function resetData() { if(confirm("초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
 </html>
-
-
