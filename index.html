@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>메이크업 마스터: 과목별 순차학습</title>
+    <title>메이크업 마스터 v13: 버그 수정판</title>
     <style>
-        /* CSS 스타일 (v10과 동일, 모바일 최적화 및 20% 축소 유지) */
+        /* CSS는 동일하되 레이어 안정성을 위해 display 속성 관리 강화 */
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --accent: #ffd93d; --bg: #f2f4f7; --blue-active: #3498db; --gray-done: #d1d8e0; --lock: #e9ecef; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
-        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; display: none; } /* 초기엔 숨김 */
         .stage-box { background: white; padding: 18px; border-radius: 16px; margin-bottom: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .stage-title { font-size: 1rem; font-weight: 800; margin-bottom: 15px; }
         .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -35,13 +35,13 @@
 
 <div id="loading-screen">
     <div style="font-size: 2rem;">⏳</div>
-    <div style="font-weight: bold; margin-top: 10px;">과목별 데이터를 정렬 중입니다...</div>
-    <div id="load-status" style="font-size: 0.8rem; color: #888; margin-top: 5px;">0/4 완료</div>
+    <div style="font-weight: bold; margin-top: 10px;">데이터를 동기화 중입니다...</div>
+    <div id="load-status" style="font-size: 0.8rem; color: #888; margin-top: 5px;">준비 중</div>
 </div>
 
-<div class="container" id="main-container" style="display:none;">
-    <div id="dashboard">
-        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 국가자격증 필기 2026</h1>
+<div class="container" id="main-container">
+    <div id="dashboard-view">
+        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 합격 시스템</h1>
         
         <div class="stage-box">
             <div class="stage-title">STAGE 1. 과목별 순차 회독</div>
@@ -54,11 +54,12 @@
         <div class="stage-box" style="border-left-color: var(--secondary);"><div class="stage-title">STAGE 2. 오답 소탕</div><button class="btn-full" id="btn-wrong-round" onclick="handleStageClick('wrong', 'round', 60)">오답 정복 (<span id="cnt-round">0</span>)</button></div>
         <div class="stage-box" style="border-left-color: var(--accent);"><div class="stage-title">STAGE 3. 실전 기출 (5회)</div><div class="btn-grid" id="mock-btns"></div></div>
         <div class="stage-box" style="border-left-color: #2d3436;"><div class="stage-title">STAGE 4. 최종 오답 정복</div><button class="btn-full" id="btn-wrong-final" onclick="handleStageClick('wrong', 'final', 40)">기출 오답 소탕 (<span id="cnt-final">0</span>)</button></div>
+        <div style="text-align: center; margin-top:20px;"><button onclick="resetData()" style="color:#bbb; border:none; background:none; font-size:0.8rem; text-decoration:underline; cursor:pointer;">기록 초기화</button></div>
     </div>
 
     <div id="quiz-app">
         <div class="top-nav">
-            <button onclick="exitQuiz()" style="border:none; background:none; font-weight:bold;">◀ 중단</button>
+            <button onclick="exitQuiz()" style="border:none; background:none; font-weight:bold; cursor:pointer;">◀ 중단</button>
             <span id="q-category" style="color:var(--primary); font-weight:bold; font-size:0.85rem;">과목</span>
             <span id="q-progress">0/0</span>
             <div id="timer" class="timer-badge">00:00</div>
@@ -79,34 +80,46 @@
 
     const fileNames = ['makeup1.json', 'makeup2.json', 'makeup3.json', 'makeup4.json'];
 
-    // [핵심] 데이터를 섞지 않고 파일 순서대로 정렬하여 로드
     async function loadData() {
+        if (questionsDB.length > 0) return; // 이미 로드됨
         let loaded = 0;
         try {
             for (const file of fileNames) {
-                const response = await fetch(file);
+                const response = await fetch(file + '?v=' + new Date().getTime()); // 캐시 방지
                 const data = await response.json();
-                // 각 문제에 보기가 섞이지 않은 원본을 유지하면서 shuffling을 위한 준비만 함
                 questionsDB = questionsDB.concat(data);
                 loaded++;
                 document.getElementById('load-status').innerText = `${loaded}/4 완료`;
             }
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-container').style.display = 'block';
-            if (localStorage.getItem('makeup_wrongs')) wrongStorage = JSON.parse(localStorage.getItem('makeup_wrongs'));
+            
+            const savedWrongs = localStorage.getItem('makeup_wrongs');
+            if (savedWrongs) wrongStorage = JSON.parse(savedWrongs);
+            
             showDashboard();
-        } catch (err) { document.getElementById('load-status').innerText = "파일 로드 오류"; }
+        } catch (err) { 
+            document.getElementById('load-status').innerText = "파일 로드 실패. 깃허브 업로드 확인 필요."; 
+        }
     }
 
     window.onload = loadData;
 
     function showDashboard() {
+        // 모든 뷰 초기화
+        document.getElementById('dashboard-view').style.display = 'block';
+        document.getElementById('quiz-app').style.display = 'none';
+        
+        // 오답 개수 갱신
         document.getElementById('cnt-round').innerText = Array.from(new Map(wrongStorage.round.map(q => [q.id, q])).values()).length;
         document.getElementById('cnt-final').innerText = Array.from(new Map(wrongStorage.final.map(q => [q.id, q])).values()).length;
+
+        // 버튼 잠금 및 색상 갱신
         updateBtn('btn-study-1', 'save_study_1', 'done_study_1', true);
         updateBtn('btn-study-2', 'save_study_2', 'done_study_2', localStorage.getItem('done_study_1'));
         updateBtn('btn-study-3', 'save_study_3', 'done_study_3', localStorage.getItem('done_study_2'));
         updateBtn('btn-wrong-round', 'save_wrong_round', 'done_wrong_round', localStorage.getItem('done_study_3'));
+
         const mockArea = document.getElementById('mock-btns');
         let prevMockDone = localStorage.getItem('done_wrong_round');
         mockArea.innerHTML = [1,2,3,4,5].map(n => {
@@ -117,6 +130,7 @@
             prevMockDone = localStorage.getItem(doneKey);
             return `<button class="btn-action ${statusClass}" id="btn-mock-${n}" onclick="handleStageClick('mock', ${n}, 40)">${statusClass.includes('locked') ? '🔒 ' : ''}${n}회</button>`;
         }).join('');
+        
         updateBtn('btn-wrong-final', 'save_wrong_final', 'done_wrong_final', localStorage.getItem('done_mock_5'));
     }
 
@@ -138,13 +152,15 @@
     function checkResume(mode, round, limit) {
         const saveKey = `save_${mode}_${round}`, doneKey = `done_${mode}_${round}`;
         const saved = localStorage.getItem(saveKey);
-        if (saved && confirm("이어서 푸시겠습니까?")) { state = { ...JSON.parse(saved), sessionKey: saveKey, doneKey: doneKey }; launch(); return; }
+        if (saved && confirm("이어서 푸시겠습니까?")) {
+            state = { ...JSON.parse(saved), sessionKey: saveKey, doneKey: doneKey };
+            launch(); return;
+        }
         
         localStorage.removeItem(doneKey);
-        // [수정] study 모드일 때는 questionsDB의 순서(과목 순서)를 그대로 유지
         let pool = (mode === 'study') ? [...questionsDB] : (mode === 'wrong' ? Array.from(new Map(wrongStorage[round].map(q => [q.id, q])).values()) : []);
         
-        if (mode === 'mock') { // 기출모의고사는 어쩔 수 없이 랜덤 추출
+        if (mode === 'mock') {
             const ratio = { "메이크업개론": 12, "피부학": 18, "화장품학": 15, "공중위생관리학": 15 };
             pool = [];
             for(let s in ratio) {
@@ -152,9 +168,11 @@
                 pool.push(...p.slice(0, ratio[s]));
             }
             pool.sort(() => Math.random() - 0.5);
+        } else if (state.currentRound > 1) {
+            // 2회차 이상부턴 과목 내 문제 셔플
+            pool.sort(() => Math.random() - 0.5);
         }
 
-        // 보기 셔플은 하되 문제 순서는 pool 그대로(study 시 과목별 순서)
         const finalQuestions = pool.map(q => {
             const opts = Object.entries(q.options).sort(() => Math.random() - 0.5);
             return { ...q, shuffledOptions: opts };
@@ -165,7 +183,7 @@
     }
 
     function launch() {
-        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('quiz-app').style.display = 'block';
         window.scrollTo(0,0); renderQuestion();
     }
@@ -178,16 +196,19 @@
         document.getElementById('q-text').innerText = q.question;
         const optArea = document.getElementById('options-area'), expArea = document.getElementById('exp-area'), nextBtn = document.getElementById('next-btn');
 
+        const optsHtml = q.shuffledOptions.map(([id, text]) => {
+            if(state.currentRound === 1 && state.mode === 'study') return `<div class="option-btn ${id === q.answer ? 'correct' : ''}">${text}</div>`;
+            return `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`;
+        }).join('');
+        optArea.innerHTML = optsHtml;
+
         if(state.currentRound === 1 && state.mode === 'study') {
-            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<div class="option-btn ${id === q.answer ? 'correct' : ''}">${text}</div>`).join('');
             expArea.innerHTML = `<strong>💡 학습:</strong> ${q.explanation}`;
             expArea.style.display = 'block'; nextBtn.style.display = 'block';
         } else if(state.currentRound === 2 && state.mode === 'study') {
-            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`).join('');
             expArea.innerHTML = `<strong>📖 해설 유추:</strong><br>${q.explanation}`;
             expArea.style.display = 'block'; nextBtn.style.display = 'none'; startTimer();
         } else {
-            optArea.innerHTML = q.shuffledOptions.map(([id, text]) => `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`).join('');
             expArea.style.display = 'none'; nextBtn.style.display = 'none'; startTimer();
         }
         localStorage.setItem(state.sessionKey, JSON.stringify(state));
@@ -200,7 +221,7 @@
         if(selected === correct) {
             btn.classList.add('correct');
             if(state.mode === 'wrong') {
-                wrongStorage[state.currentRound] = wrongStorage[state.currentRound].filter(q => q.id !== state.questions[state.index].id);
+                wrongStorage[state.currentRound === 'round' ? 'round' : 'final'] = wrongStorage[state.currentRound === 'round' ? 'round' : 'final'].filter(q => q.id !== state.questions[state.index].id);
                 localStorage.setItem('makeup_wrongs', JSON.stringify(wrongStorage));
             }
             if(state.currentRound === 2 && state.mode === 'study') { setTimeout(() => nextQuestion(), 1000); return; }
@@ -230,12 +251,18 @@
         state.timerId = setInterval(() => {
             state.timeLeft--;
             const m = Math.floor(state.timeLeft / 60), s = state.timeLeft % 60;
-            document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            if(document.getElementById('timer')) document.getElementById('timer').innerText = `${m}:${s < 10 ? '0'+s : s}`;
             if(state.timeLeft <= 0) { clearInterval(state.timerId); nextQuestion(); }
         }, 1000);
     }
 
-    function exitQuiz() { if(state.timerId) clearInterval(state.timerId); showDashboard(); document.getElementById('quiz-app').style.display = 'none'; window.scrollTo(0,0); }
+    function exitQuiz() {
+        if(state.timerId) clearInterval(state.timerId);
+        if(state.sessionKey) localStorage.setItem(state.sessionKey, JSON.stringify(state));
+        showDashboard();
+        window.scrollTo(0,0);
+    }
+
     function resetData() { if(confirm("초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
