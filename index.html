@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>메이크업 미용사 필기시험 2026</title>
+    <title>2026 메이크업 미용사 필기시험</title>
     <style>
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --accent: #ffd93d; --bg: #f2f4f7; --blue-active: #3498db; --gray-done: #d1d8e0; --lock: #e9ecef; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -19,8 +19,9 @@
         .status-locked { background: var(--lock) !important; color: #adb5bd !important; border-style: dashed !important; opacity: 0.8; }
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
         #quiz-app { display: none; }
-        .top-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 0 0 15px 15px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .top-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 8px 15px; border-radius: 0 0 15px 15px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .timer-badge { background: #333; color: var(--accent); padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; }
+        .nav-btn { border:none; background:#f1f3f5; border-radius:8px; padding:6px 12px; font-weight:bold; cursor:pointer; font-size:0.85rem; }
         .q-card { background: white; padding: 22px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .q-text { font-size: 1.1rem; font-weight: 800; margin-bottom: 18px; }
         .option-btn { width: 100%; padding: 16px; text-align: left; border: 2px solid #f1f3f5; border-radius: 12px; background: white; cursor: pointer; margin-bottom: 10px; font-size: 0.95rem; }
@@ -28,10 +29,7 @@
         .option-btn.wrong { background: #ffebee; border-color: #f44336; color: #b71c1c; }
         .exp-box { background: #fdf2f2; border-left: 4px solid var(--primary); padding: 15px; border-radius: 0 10px 10px 0; margin-top: 15px; font-size: 0.9rem; }
         .next-btn { width: 100%; padding: 18px; background: #2d3436; color: white; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; }
-        
-        /* 저작권 영역 스타일 */
         .footer-copyright { text-align: center; padding: 25px 10px; color: #95a5a6; font-size: 0.75rem; line-height: 1.6; }
-        .footer-copyright b { color: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -44,8 +42,7 @@
 
 <div class="container" id="main-container" style="display:none;">
     <div id="dashboard-view">
-        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 미용사 필기시험 2026</h1>
-        
+        <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 2026 메이크업 미용사 필기시험</h1>
         <div class="stage-box">
             <div class="stage-title">STAGE 1. 과목별 순차 회독</div>
             <div class="btn-grid">
@@ -57,22 +54,18 @@
         <div class="stage-box" style="border-left-color: var(--secondary);"><div class="stage-title">STAGE 2. 오답 소탕</div><button class="btn-full" id="btn-wrong-round" onclick="handleStageClick('wrong', 'round', 60)">오답 정복 (<span id="cnt-round">0</span>)</button></div>
         <div class="stage-box" style="border-left-color: var(--accent);"><div class="stage-title">STAGE 3. 실전 기출 (5회)</div><div class="btn-grid" id="mock-btns"></div></div>
         <div class="stage-box" style="border-left-color: #2d3436;"><div class="stage-title">STAGE 4. 최종 오답 정복</div><button class="btn-full" id="btn-wrong-final" onclick="handleStageClick('wrong', 'final', 40)">기출 오답 소탕 (<span id="cnt-final">0</span>)</button></div>
-        
-        <div class="footer-copyright">
-            <b>Copyright 2026. All rights reserved.</b><br>
-            본 시스템의 문제 데이터 및 학습 알고리즘에 대한 무단 복제 및 전재를 금합니다.<br>
-            사용자의 학습 데이터는 기기 로컬 저장소에 안전하게 보관됩니다.
-        </div>
+        <div class="footer-copyright"><b>Copyright 2026. All rights reserved.</b><br>본 시스템의 문제 데이터 및 학습 알고리즘에 대한 무단 복제 및 전재를 금합니다.</div>
     </div>
 
     <div id="quiz-app">
         <div class="top-nav">
-            <button onclick="exitQuiz()" style="border:none; background:none; font-weight:bold; cursor:pointer; font-size:1rem; padding:10px;">◀ 중단</button>
-            <span id="q-category" style="color:var(--primary); font-weight:bold; font-size:0.85rem;">과목</span>
-            <span id="q-progress">0/0</span>
+            <button class="nav-btn" onclick="exitQuiz()">중단</button>
+            <button class="nav-btn" id="prev-btn" onclick="prevQuestion()">◀ 이전</button>
+            <span id="q-progress" style="font-size:0.85rem; font-weight:bold;">0/0</span>
             <div id="timer" class="timer-badge">00:00</div>
         </div>
         <div class="q-card">
+            <div id="q-category" style="color:var(--primary); font-weight:bold; font-size:0.85rem; margin-bottom:5px;">과목</div>
             <div id="q-text" class="q-text">질문</div>
             <div id="options-area"></div>
             <div id="exp-area" class="exp-box" style="display:none;"></div>
@@ -82,7 +75,6 @@
 </div>
 
 <script>
-    /* 자바스크립트 로직 (v14의 중단 버그 수정 반영) */
     let questionsDB = [];
     let wrongStorage = { round: [], final: [] };
     let state = { questions: [], index: 0, timeLimit: 0, timeLeft: 0, timerId: null, currentRound: 1, mode: '', sessionKey: '', doneKey: '' };
@@ -101,8 +93,7 @@
             }
             document.getElementById('loading-screen').style.display = 'none';
             document.getElementById('main-container').style.display = 'block';
-            const savedWrongs = localStorage.getItem('makeup_wrongs');
-            if (savedWrongs) wrongStorage = JSON.parse(savedWrongs);
+            if (localStorage.getItem('makeup_wrongs')) wrongStorage = JSON.parse(localStorage.getItem('makeup_wrongs'));
             showDashboard();
         } catch (err) { document.getElementById('load-status').innerText = "파일 로드 실패"; }
     }
@@ -182,11 +173,16 @@
         document.getElementById('q-progress').innerText = `${state.index + 1} / ${state.questions.length}`;
         document.getElementById('q-text').innerText = q.question;
         const optArea = document.getElementById('options-area'), expArea = document.getElementById('exp-area'), nextBtn = document.getElementById('next-btn');
+        
+        // 이전 버튼 활성화/비활성화
+        document.getElementById('prev-btn').style.opacity = state.index === 0 ? "0.3" : "1";
+
         const optsHtml = q.shuffledOptions.map(([id, text]) => {
             if(state.currentRound === 1 && state.mode === 'study') return `<div class="option-btn ${id === q.answer ? 'correct' : ''}">${text}</div>`;
             return `<button class="option-btn" onclick="handleSelect(this, '${id}', '${q.answer}')">${text}</button>`;
         }).join('');
         optArea.innerHTML = optsHtml;
+
         if(state.currentRound === 1 && state.mode === 'study') {
             expArea.innerHTML = `<strong>💡 학습:</strong> ${q.explanation}`; expArea.style.display = 'block'; nextBtn.style.display = 'block';
         } else if(state.currentRound === 2 && state.mode === 'study') {
@@ -226,6 +222,14 @@
         else { alert("미션 완료!"); localStorage.setItem(state.doneKey, "true"); localStorage.removeItem(state.sessionKey); exitQuiz(); }
     }
 
+    // [이전 문제 버튼 기능]
+    function prevQuestion() {
+        if(state.index > 0) {
+            state.index--;
+            renderQuestion();
+        }
+    }
+
     function startTimer() {
         if(state.timeLimit <= 0) return;
         state.timeLeft = state.timeLimit;
@@ -245,4 +249,3 @@
 </script>
 </body>
 </html>
-
