@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>메이크업 마스터 v13: 버그 수정판</title>
+    <title>메이크업 마스터 v14: 완벽 복귀</title>
     <style>
-        /* CSS는 동일하되 레이어 안정성을 위해 display 속성 관리 강화 */
         :root { --primary: #ff6b6b; --secondary: #4ecdc4; --accent: #ffd93d; --bg: #f2f4f7; --blue-active: #3498db; --gray-done: #d1d8e0; --lock: #e9ecef; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body { font-family: 'Pretendard', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
-        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; display: none; } /* 초기엔 숨김 */
+        .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 12px; }
         .stage-box { background: white; padding: 18px; border-radius: 16px; margin-bottom: 12px; border-left: 6px solid var(--primary); box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .stage-title { font-size: 1rem; font-weight: 800; margin-bottom: 15px; }
         .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -19,7 +18,7 @@
         .status-completed { background: var(--gray-done) !important; color: #7f8c8d !important; }
         .status-locked { background: var(--lock) !important; color: #adb5bd !important; border-style: dashed !important; opacity: 0.8; }
         #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
-        #quiz-app { display: none; }
+        #quiz-app { display: none; } /* 초기엔 대시보드만 보이게 설정 */
         .top-nav { display: flex; justify-content: space-between; align-items: center; background: white; padding: 10px 15px; border-radius: 0 0 15px 15px; margin-bottom: 12px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .timer-badge { background: #333; color: var(--accent); padding: 4px 12px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; }
         .q-card { background: white; padding: 22px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -35,11 +34,11 @@
 
 <div id="loading-screen">
     <div style="font-size: 2rem;">⏳</div>
-    <div style="font-weight: bold; margin-top: 10px;">데이터를 동기화 중입니다...</div>
-    <div id="load-status" style="font-size: 0.8rem; color: #888; margin-top: 5px;">준비 중</div>
+    <div style="font-weight: bold; margin-top: 10px;">데이터 로드 중...</div>
+    <div id="load-status" style="font-size: 0.8rem; color: #888;">0/4 완료</div>
 </div>
 
-<div class="container" id="main-container">
+<div class="container" id="main-container" style="display:none;">
     <div id="dashboard-view">
         <h1 style="text-align: center; font-size: 1.4rem; margin: 15px 0;">🎯 메이크업 합격 시스템</h1>
         
@@ -59,7 +58,7 @@
 
     <div id="quiz-app">
         <div class="top-nav">
-            <button onclick="exitQuiz()" style="border:none; background:none; font-weight:bold; cursor:pointer;">◀ 중단</button>
+            <button onclick="exitQuiz()" style="border:none; background:none; font-weight:bold; cursor:pointer; font-size:1rem; padding:10px;">◀ 중단</button>
             <span id="q-category" style="color:var(--primary); font-weight:bold; font-size:0.85rem;">과목</span>
             <span id="q-progress">0/0</span>
             <div id="timer" class="timer-badge">00:00</div>
@@ -81,11 +80,10 @@
     const fileNames = ['makeup1.json', 'makeup2.json', 'makeup3.json', 'makeup4.json'];
 
     async function loadData() {
-        if (questionsDB.length > 0) return; // 이미 로드됨
         let loaded = 0;
         try {
             for (const file of fileNames) {
-                const response = await fetch(file + '?v=' + new Date().getTime()); // 캐시 방지
+                const response = await fetch(file + '?v=' + Date.now());
                 const data = await response.json();
                 questionsDB = questionsDB.concat(data);
                 loaded++;
@@ -99,22 +97,20 @@
             
             showDashboard();
         } catch (err) { 
-            document.getElementById('load-status').innerText = "파일 로드 실패. 깃허브 업로드 확인 필요."; 
+            document.getElementById('load-status').innerText = "파일 로드 실패"; 
         }
     }
 
     window.onload = loadData;
 
     function showDashboard() {
-        // 모든 뷰 초기화
-        document.getElementById('dashboard-view').style.display = 'block';
+        // 퀴즈 끄고 대시보드 켜기 (명확한 전환)
         document.getElementById('quiz-app').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
         
-        // 오답 개수 갱신
         document.getElementById('cnt-round').innerText = Array.from(new Map(wrongStorage.round.map(q => [q.id, q])).values()).length;
         document.getElementById('cnt-final').innerText = Array.from(new Map(wrongStorage.final.map(q => [q.id, q])).values()).length;
 
-        // 버튼 잠금 및 색상 갱신
         updateBtn('btn-study-1', 'save_study_1', 'done_study_1', true);
         updateBtn('btn-study-2', 'save_study_2', 'done_study_2', localStorage.getItem('done_study_1'));
         updateBtn('btn-study-3', 'save_study_3', 'done_study_3', localStorage.getItem('done_study_2'));
@@ -168,8 +164,7 @@
                 pool.push(...p.slice(0, ratio[s]));
             }
             pool.sort(() => Math.random() - 0.5);
-        } else if (state.currentRound > 1) {
-            // 2회차 이상부턴 과목 내 문제 셔플
+        } else if (round > 1) {
             pool.sort(() => Math.random() - 0.5);
         }
 
@@ -185,7 +180,8 @@
     function launch() {
         document.getElementById('dashboard-view').style.display = 'none';
         document.getElementById('quiz-app').style.display = 'block';
-        window.scrollTo(0,0); renderQuestion();
+        window.scrollTo(0,0); 
+        renderQuestion();
     }
 
     function renderQuestion() {
@@ -221,7 +217,7 @@
         if(selected === correct) {
             btn.classList.add('correct');
             if(state.mode === 'wrong') {
-                wrongStorage[state.currentRound === 'round' ? 'round' : 'final'] = wrongStorage[state.currentRound === 'round' ? 'round' : 'final'].filter(q => q.id !== state.questions[state.index].id);
+                wrongStorage[state.currentRound] = wrongStorage[state.currentRound].filter(q => q.id !== state.questions[state.index].id);
                 localStorage.setItem('makeup_wrongs', JSON.stringify(wrongStorage));
             }
             if(state.currentRound === 2 && state.mode === 'study') { setTimeout(() => nextQuestion(), 1000); return; }
@@ -256,11 +252,28 @@
         }, 1000);
     }
 
+    // [핵심 수정] 중단 버튼 클릭 시 즉시 복귀 로직
     function exitQuiz() {
-        if(state.timerId) clearInterval(state.timerId);
-        if(state.sessionKey) localStorage.setItem(state.sessionKey, JSON.stringify(state));
+        // 1. 타이머 즉시 정지
+        if(state.timerId) {
+            clearInterval(state.timerId);
+            state.timerId = null;
+        }
+        
+        // 2. 현재 상태(푼 문제 번호 등) 저장
+        if(state.sessionKey) {
+            localStorage.setItem(state.sessionKey, JSON.stringify(state));
+        }
+        
+        // 3. 화면 가시성 전환 (퀴즈 끄고 대시보드 켜기)
+        document.getElementById('quiz-app').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
+        
+        // 4. 대시보드 상태 업데이트 (파란색 버튼 등 갱신)
         showDashboard();
-        window.scrollTo(0,0);
+        
+        // 5. 스크롤 맨 위로
+        window.scrollTo(0, 0);
     }
 
     function resetData() { if(confirm("초기화하시겠습니까?")) { localStorage.clear(); location.reload(); } }
